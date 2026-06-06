@@ -1,0 +1,8 @@
+parameters:
+    level: 7
+    treatPhpDocTypesAsCertain: false
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    paths:
+        - src
+    tmpDir: tests/.phpstan.cache
