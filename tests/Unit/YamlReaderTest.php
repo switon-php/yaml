@@ -982,13 +982,13 @@ YAML;
         $this->assertSame('', $resolved['value']);
     }
 
-    public function testInterpolateRejectsNonScalarPlaceholderVariables(): void
+    public function testInterpolateSkipsNonScalarPlaceholderVariables(): void
     {
         $reader = new YamlReader();
         $data = $reader->parse('value: ${NAME}');
 
         $this->expectException(YamlParseException::class);
-        $this->expectExceptionMessage('Placeholder variable NAME must be string, int, float, or bool');
+        $this->expectExceptionMessage('Missing placeholder value for NAME');
 
         $reader->interpolate($data, [
             'NAME' => ['bad'],
@@ -1087,7 +1087,7 @@ YAML;
         $this->assertSame(['first', 'fallback'], $resolved);
     }
 
-    public function testInterpolateRejectsNullPlaceholderVariable(): void
+    public function testInterpolateSkipsNullPlaceholderVariable(): void
     {
         $yaml = <<<'YAML'
 v: ${NAME}
@@ -1097,7 +1097,7 @@ YAML;
         $data = $reader->parse($yaml);
 
         $this->expectException(YamlParseException::class);
-        $this->expectExceptionMessage('Placeholder variable NAME must be string, int, float, or bool');
+        $this->expectExceptionMessage('Missing placeholder value for NAME');
 
         $reader->interpolate($data, [
             'NAME' => null,

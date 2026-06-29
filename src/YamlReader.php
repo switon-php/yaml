@@ -263,6 +263,8 @@ class YamlReader implements YamlReaderInterface
     /**
      * Interpolate placeholder variables into a parsed value tree.
      *
+     * Guidance: placeholder variables must be string, int, float, or bool; other values are skipped.
+     *
      * @param array<int|string, mixed> $data
      *
      * @return array<int|string, mixed>
@@ -748,10 +750,6 @@ class YamlReader implements YamlReaderInterface
                 $normalized[$name] = Json::stringify($value);
                 continue;
             }
-
-            YamlParseException::raise('Placeholder variable {name} must be string, int, float, or bool', [
-                'name' => $name,
-            ]);
         }
 
         return $normalized;
