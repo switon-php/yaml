@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Switon\Yaml;
 
+use Switon\Core\Attribute\Autowired;
+use Switon\Core\FilesystemInterface;
 use Switon\Core\Json;
+use Switon\Core\Strings;
 use Switon\Yaml\Exception\YamlParseException;
 
 use function ctype_digit;
 use function is_array;
 use function is_string;
 use function preg_match;
-use function preg_split;
 use function rtrim;
 use function str_contains;
 use function str_starts_with;
@@ -34,12 +36,23 @@ use function trim;
  * formatters; see <code>subset.md</code>.
  *
  * Road-signs:
+ * - load(): path via {@see FilesystemInterface} then read()
  * - read(): parse + interpolate pipeline
  * - parse(): subset parser and structural validation
  * - interpolate(): placeholder expansion over parsed arrays
  */
 class YamlReader implements YamlReaderInterface
 {
+    #[Autowired] protected FilesystemInterface $filesystem;
+
+    /**
+     * Load one YAML-subset document from a filesystem path.
+     */
+    public function load(string $file, array $variables = []): array
+    {
+        return $this->read($this->filesystem->read($file), $variables);
+    }
+
     /**
      * Parse and interpolate one YAML-subset document.
      */
@@ -53,7 +66,7 @@ class YamlReader implements YamlReaderInterface
      */
     public function parse(string $yaml): array
     {
-        $lines = preg_split('/\r\n|\r|\n/', $yaml) ?: [];
+        $lines = Strings::rawLines($yaml);
 
         /** @var list<array{indent: int, type: 'map'|'seq', value: mixed, pendingKey: string|null, pendingSeq: bool}> $stack */
         $stack = [];
@@ -197,12 +210,14 @@ class YamlReader implements YamlReaderInterface
                 ]);
             }
 
-            $key = trim(substr($trimmed, 0, $pos));
-            if ($key === '') {
+            $keyRaw = trim(substr($trimmed, 0, $pos));
+            if ($keyRaw === '') {
                 YamlParseException::raise('Mapping key must not be empty (line {line})', [
                     'line' => $lineNumber,
                 ]);
             }
+
+            $key = $this->parseMappingKey($keyRaw, $lineNumber);
 
             if ($key === '<<') {
                 YamlParseException::raise('Merge keys are not supported (line {line})', [
@@ -651,6 +666,38 @@ class YamlReader implements YamlReaderInterface
         return -1;
     }
 
+    /**
+     * Parse a mapping key with the same quoted/plain scalar rules as values.
+     *
+     * Keys must be scalars (string/int/float/bool/null); sequences are rejected.
+     */
+    protected function parseMappingKey(string $key, int $line): string
+    {
+        $parsed = $this->parseScalarOrInlineStructure($key, $line);
+        if (is_array($parsed)) {
+            YamlParseException::raise('Mapping key must be a scalar (line {line})', [
+                'line' => $line,
+            ]);
+        }
+        if ($parsed === null) {
+            YamlParseException::raise('Mapping key must not be empty (line {line})', [
+                'line' => $line,
+            ]);
+        }
+        if (is_bool($parsed)) {
+            return $parsed ? 'true' : 'false';
+        }
+
+        $asString = (string) $parsed;
+        if ($asString === '') {
+            YamlParseException::raise('Mapping key must not be empty (line {line})', [
+                'line' => $line,
+            ]);
+        }
+
+        return $asString;
+    }
+
     protected function parseSingleQuotedString(string $value, int $line): string
     {
         if (strlen($value) < 2) {
@@ -696,8 +743,21 @@ class YamlReader implements YamlReaderInterface
             return false;
         }
 
-        if (ctype_digit($value) || ($value[0] === '-' && ctype_digit(substr($value, 1)))) {
-            return (int)$value;
+        // Leading zeros are not decimal ints (YAML 1.2 / PHP numeric-string keys).
+        if (ctype_digit($value)) {
+            if ($value !== '0' && $value[0] === '0') {
+                return $value;
+            }
+
+            return (int) $value;
+        }
+        if ($value[0] === '-' && ctype_digit(substr($value, 1))) {
+            $digits = substr($value, 1);
+            if ($digits !== '0' && $digits[0] === '0') {
+                return $value;
+            }
+
+            return (int) $value;
         }
 
         if (preg_match('/^-?\d+\.\d+$/', $value) === 1) {

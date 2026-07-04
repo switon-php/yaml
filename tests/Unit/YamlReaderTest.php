@@ -8,8 +8,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Switon\Yaml\Exception\YamlParseException;
 use Switon\Yaml\YamlReader;
+use Switon\Yaml\Tests\Fixtures\YamlReaderProbe;
 
-final class YamlReaderTest extends TestCase
+class YamlReaderTest extends TestCase
 {
     public function testIgnoresBlankLinesAndFullLineComments(): void
     {
@@ -1140,6 +1141,22 @@ YAML;
         $this->assertSame('.5', $data['dot']);
     }
 
+    public function testQuotedMappingKeysStripQuotes(): void
+    {
+        $yaml = <<<'YAML'
+aliases:
+  '@books': '@runtime/books'
+  "@vendor": /tmp/vendor
+YAML;
+
+        $reader = new YamlReader();
+        $data = $reader->parse($yaml);
+
+        $this->assertSame('@runtime/books', $data['aliases']['@books']);
+        $this->assertSame('/tmp/vendor', $data['aliases']['@vendor']);
+        $this->assertArrayNotHasKey("'@books'", $data['aliases']);
+    }
+
     public function testRejectsDuplicateKeyInNestedMapping(): void
     {
         $yaml = <<<'YAML'
@@ -1473,5 +1490,28 @@ YAML;
         $fromChain = $reader->interpolate($reader->parse($yaml), ['HOST' => '127.0.0.1']);
 
         $this->assertSame($fromChain, $fromRead);
+    }
+
+    public function testLoadReadsPathViaFilesystem(): void
+    {
+        $filesystem = $this->createStub(\Switon\Core\FilesystemInterface::class);
+        $filesystem->method('read')->willReturn("name: from-file\nenabled: true\n");
+
+        $reader = (new YamlReaderProbe())->assignFilesystemForTest($filesystem);
+
+        $data = $reader->load('~/ignored.yml');
+        $this->assertSame('from-file', $data['name']);
+        $this->assertTrue($data['enabled']);
+    }
+
+    public function testLoadInterpolatesPlaceholders(): void
+    {
+        $filesystem = $this->createStub(\Switon\Core\FilesystemInterface::class);
+        $filesystem->method('read')->willReturn("host: \${HOST}\n");
+
+        $reader = (new YamlReaderProbe())->assignFilesystemForTest($filesystem);
+
+        $data = $reader->load('cfg.yml', ['HOST' => '127.0.0.1']);
+        $this->assertSame('127.0.0.1', $data['host']);
     }
 }

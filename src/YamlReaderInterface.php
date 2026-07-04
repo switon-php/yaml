@@ -13,12 +13,22 @@ namespace Switon\Yaml;
  * explicit second step over parsed string values.
  *
  * Road-signs:
+ * - load(): path → filesystem read + parse + interpolate
  * - read(): parse + interpolate convenience entry
  * - parse(): YAML-subset syntax only
  * - interpolate(): placeholder resolution over parsed values
  */
 interface YamlReaderInterface
 {
+    /**
+     * Read a YAML file path via {@see \Switon\Core\FilesystemInterface}, then `read()`.
+     *
+     * @param array<string, string|int|float|bool> $variables
+     *
+     * @return array<int|string, mixed>
+     */
+    public function load(string $file, array $variables = []): array;
+
     /**
      * Parse one Switon YAML subset document and interpolate placeholders in one call.
      *
