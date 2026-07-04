@@ -1,11 +1,12 @@
 {
     "name": "switon/yaml",
-    "description": "Strict Switon YAML subset parsing with placeholder interpolation for Switon Framework",
+    "description": "Strict Switon YAML subset read/write with placeholder interpolation for Switon Framework",
     "type": "library",
     "keywords": [
         "switon",
         "yaml",
         "parser",
+        "writer",
         "config"
     ],
     "homepage": "https://github.com/switon-php/yaml",
