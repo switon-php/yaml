@@ -43,7 +43,7 @@ class ConfigService
 }
 ```
 
-Docs: https://docs.switon.dev/latest/yaml
+Docs: https://github.com/switon-php/yaml/blob/main/docs/README.md
 
 ## License
 

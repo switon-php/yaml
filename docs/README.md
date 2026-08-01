@@ -139,4 +139,4 @@ Use `YamlParseException` for invalid subset input or invalid placeholder syntax.
 
 - **Need setup questions answered quickly:** [FAQ](faq.md#yaml-faq)
 - **Need design trade-offs:** [Design Rationale](design.md#design-rationale)
-- **Need OpenAPI YAML workflows:** [OpenAPI Package](../../openapi/docs/README.md)
+- **Need OpenAPI YAML workflows:** [OpenAPI Package](https://github.com/switon-php/openapi/blob/main/docs/README.md)

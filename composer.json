@@ -20,7 +20,7 @@
     "support": {
         "source": "https://github.com/switon-php/yaml",
         "issues": "https://github.com/switon-php/yaml/issues",
-        "docs": "https://docs.switon.dev/latest/yaml"
+        "docs": "https://github.com/switon-php/yaml/blob/main/docs/README.md"
     },
     "require": {
         "php": ">=8.3",
