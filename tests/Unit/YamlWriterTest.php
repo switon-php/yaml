@@ -69,6 +69,25 @@ class YamlWriterTest extends TestCase
         $this->assertStringContainsString("x:", $yaml);
     }
 
+    public function testDumpQuotesDigitLikeAndBoolLikeStringsForRoundTrip(): void
+    {
+        $yaml = $this->writer()->dump([
+            'env' => [
+                'DEBUG' => '1',
+                'FLAG' => 'true',
+                'EMPTY' => 'null',
+            ],
+        ]);
+        $this->assertStringContainsString("DEBUG: '1'", $yaml);
+        $this->assertStringContainsString("FLAG: 'true'", $yaml);
+        $this->assertStringContainsString("EMPTY: 'null'", $yaml);
+
+        $loaded = $this->parse($yaml);
+        $this->assertSame('1', $loaded['env']['DEBUG']);
+        $this->assertSame('true', $loaded['env']['FLAG']);
+        $this->assertSame('null', $loaded['env']['EMPTY']);
+    }
+
     public function testDumpEmptyMappingIsEmptyString(): void
     {
         $this->assertSame('', $this->writer()->dump([]));

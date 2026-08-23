@@ -278,6 +278,8 @@ class YamlWriter implements YamlWriterInterface
             || str_contains($v, ': ')
             || str_contains($v, '#')
             || preg_match('/[:@`[\]{},&*!|>%"\'\\\\]/', $v) === 1
+            // Keep digit-like / bool-like strings as strings on round-trip (mcp.yml env/headers).
+            || preg_match('/^(?:null|true|false|yes|no|on|off|~|[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)$/i', $v) === 1
         ) {
             return $this->singleQuoted($v);
         }
